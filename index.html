@@ -7,8 +7,8 @@
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; }
+        input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; }
         button { background-color: var(--accent); border: none; cursor: pointer; font-weight: bold; }
         #app-content { display: none; }
     </style>
@@ -22,7 +22,7 @@
 </div>
 
 <div id="app-content" class="container">
-    <h1>Atlas Financeiro</h1>
+    <h1>Controle Financeiro</h1>
     <div id="saldo-box">Saldo Atual: <strong id="saldo-total">R$ 0,00</strong></div>
     <form id="form-transacao">
         <input type="text" id="descricao" placeholder="Descrição" required>
@@ -33,9 +33,9 @@
 </div>
 
 <script>
-    // Verificação de segurança: se o supabase já foi carregado, não faz nada
-    if (typeof supabase === 'undefined') {
-        window.supabase = supabaseJs.createClient(
+    // Configuração protegida para evitar erros de re-declaração
+    if (!window.db) {
+        window.db = supabaseJs.createClient(
             'https://syocucffhbkfwqgrlfzo.supabase.co', 
             'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
         );
@@ -46,13 +46,11 @@
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
             await carregarDados();
-        } else {
-            alert('Senha incorreta!');
-        }
+        } else { alert('Senha incorreta!'); }
     });
 
     async function carregarDados() {
-        const { data } = await supabase.from('transacoes').select('*');
+        const { data } = await window.db.from('transacoes').select('*');
         const lista = document.getElementById('lista-transacoes');
         lista.innerHTML = '';
         data?.forEach(t => {
