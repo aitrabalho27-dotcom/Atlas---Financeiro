@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Atlas Financeiro</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -30,40 +30,48 @@
     <ul id="lista-transacoes"></ul>
 </div>
 <script>
-    // Verificação para garantir que o cliente só seja criado uma vez
-    if (typeof window.supabaseClient === 'undefined') {
-        window.supabaseClient = Supabase.createClient(
-            'https://syocucffhbkfwqgrlfzo.supabase.co', 
-            'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
-        );
-    }
+    // Aguarda o carregamento total da biblioteca
+    window.addEventListener('load', () => {
+        if (typeof supabase === 'undefined') {
+            // Se ainda não carregou, tentamos acessar pelo objeto global
+            window.supabaseClient = supabaseJs.createClient(
+                'https://syocucffhbkfwqgrlfzo.supabase.co', 
+                'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+            );
+        } else {
+            window.supabaseClient = supabase.createClient(
+                'https://syocucffhbkfwqgrlfzo.supabase.co', 
+                'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+            );
+        }
 
-    async function carregar() {
-        const { data } = await window.supabaseClient.from('transacoes').select('*').order('id', { ascending: false });
-        const lista = document.getElementById('lista-transacoes');
-        lista.innerHTML = '';
-        let total = 0;
-        data?.forEach(t => {
-            const v = parseFloat(t.valor);
-            total += (t.tipo === 'Receita' ? v : -v);
-            lista.innerHTML += `<li>${t.descricao} - R$ ${v.toFixed(2)} (${t.tipo})</li>`;
-        });
-        document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
-    }
+        async function carregar() {
+            const { data } = await window.supabaseClient.from('transacoes').select('*').order('id', { ascending: false });
+            const lista = document.getElementById('lista-transacoes');
+            lista.innerHTML = '';
+            let total = 0;
+            data?.forEach(t => {
+                const v = parseFloat(t.valor);
+                total += (t.tipo === 'Receita' ? v : -v);
+                lista.innerHTML += `<li>${t.descricao} - R$ ${v.toFixed(2)} (${t.tipo})</li>`;
+            });
+            document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
+        }
 
-    document.getElementById('form-transacao').onsubmit = async (e) => {
-        e.preventDefault();
-        await window.supabaseClient.from('transacoes').insert([{
-            descricao: document.getElementById('descricao').value,
-            valor: document.getElementById('valor').value,
-            tipo: document.getElementById('tipo').value,
-            categoria: document.getElementById('categoria').value,
-            forma_pagamento: document.getElementById('forma_pagamento').value
-        }]);
-        document.getElementById('form-transacao').reset();
+        document.getElementById('form-transacao').onsubmit = async (e) => {
+            e.preventDefault();
+            await window.supabaseClient.from('transacoes').insert([{
+                descricao: document.getElementById('descricao').value,
+                valor: document.getElementById('valor').value,
+                tipo: document.getElementById('tipo').value,
+                categoria: document.getElementById('categoria').value,
+                forma_pagamento: document.getElementById('forma_pagamento').value
+            }]);
+            document.getElementById('form-transacao').reset();
+            carregar();
+        };
         carregar();
-    };
-    carregar();
+    });
 </script>
 </body>
 </html>
