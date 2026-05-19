@@ -88,8 +88,9 @@
 
     // Função para buscar dados do banco
     async function carregarTransacoes() {
+        // Conectando na tabela correta: movimentacoes
         let { data: transacoes, error } = await supabase
-            .from('transacoes')
+            .from('movimentacoes')
             .select('*')
             .order('id', { ascending: false });
 
@@ -101,31 +102,33 @@
         lista.innerHTML = '';
         let saldo = 0;
 
-        transacoes.forEach(t => {
-            const valorFormatado = parseFloat(t.valor);
-            
-            // Ajusta o saldo baseado se é receita ou despesa
-            if (t.tipo === 'Despesa') {
-                saldo -= valorFormatado;
-            } else {
-                saldo += valorFormatado;
-            }
+        if (transacoes) {
+            transacoes.forEach(t => {
+                const valorFormatado = parseFloat(t.valor);
+                
+                // Ajusta o saldo baseado se é receita ou despesa
+                if (t.tipo === 'Despesa') {
+                    saldo -= valorFormatado;
+                } else {
+                    saldo += valorFormatado;
+                }
 
-            const li = document.createElement('li');
-            li.className = t.tipo === 'Despesa' ? 'despesa' : 'receita';
-            
-            li.innerHTML = `
-                <div>
-                    <strong>${t.descricao}</strong> <small>(${t.categoria})</small><br>
-                    <span style="font-size: 12px; color: #777;">${t.forma_pagamento} | ${t.tipo}</span>
-                </div>
-                <div>
-                    <span>R$ ${valorFormatado.toFixed(2)}</span>
-                    <button class="btn-deletar" onclick="deletarTransacao(${t.id})">X</button>
-                </div>
-            `;
-            lista.appendChild(li);
-        });
+                const li = document.createElement('li');
+                li.className = t.tipo === 'Despesa' ? 'despesa' : 'receita';
+                
+                li.innerHTML = `
+                    <div>
+                        <strong>${t.descricao}</strong> <small>(${t.categoria})</small><br>
+                        <span style="font-size: 12px; color: #777;">${t.forma_pagamento} | ${t.tipo}</span>
+                    </div>
+                    <div>
+                        <span>R$ ${valorFormatado.toFixed(2)}</span>
+                        <button class="btn-deletar" onclick="deletarTransacao(${t.id})">X</button>
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
 
         saldoElemento.textContent = `R$ ${saldo.toFixed(2)}`;
         saldoElemento.style.color = saldo >= 0 ? '#27ae60' : '#c0392b';
@@ -141,8 +144,9 @@
         const categoria = document.getElementById('categoria').value;
         const forma_pagamento = document.getElementById('forma_pagamento').value;
 
+        // Salvando na tabela correta: movimentacoes
         const { error } = await supabase
-            .from('transacoes')
+            .from('movimentacoes')
             .insert([{ descricao, valor, tipo, categoria, forma_pagamento }]);
 
         if (error) {
@@ -157,8 +161,9 @@
     // Função para deletar uma transação
     async function deletarTransacao(id) {
         if (confirm('Deseja realmente excluir esta transação?')) {
+            // Deletando da tabela correta: movimentacoes
             const { error } = await supabase
-                .from('transacoes')
+                .from('movimentacoes')
                 .delete()
                 .eq('id', id);
 
