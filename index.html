@@ -7,8 +7,8 @@
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --text: #ffffff; --accent: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        input, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; }
+        input, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; }
         button { background-color: var(--accent); border: none; cursor: pointer; font-weight: bold; }
         #app-content { display: none; }
     </style>
@@ -17,48 +17,53 @@
 
 <div id="auth-screen" class="container">
     <h2>Acesso Atlas</h2>
-    <input type="password" id="pass" placeholder="Digite a senha">
-    <button id="btn-entrar">Entrar</button>
+    <input type="password" id="senha-usuario" placeholder="Digite a senha">
+    <button id="btn-acesso">Entrar</button>
 </div>
 
 <div id="app-content" class="container">
     <h1>Atlas Financeiro</h1>
-    <div id="saldo-box">Saldo Atual: <strong id="saldo-total">R$ 0,00</strong></div>
-    <form id="form-transacao">
-        <input type="text" id="descricao" placeholder="Descrição" required>
-        <input type="number" id="valor" step="0.01" placeholder="Valor" required>
-        <button type="submit">Salvar</button>
+    <div id="resumo-box">Saldo Atual: <strong id="valor-total">R$ 0,00</strong></div>
+    <form id="form-novo">
+        <input type="text" id="desc" placeholder="Descrição" required>
+        <input type="number" id="val" step="0.01" placeholder="Valor" required>
+        <button type="submit">Salvar Dados</button>
     </form>
-    <ul id="lista-transacoes"></ul>
+    <ul id="lista-dados"></ul>
 </div>
 
 <script>
-    // Blindagem: só inicializa se não existir
-    if (!window.supabaseClient) {
-        window.supabaseClient = supabaseJs.createClient(
-            'https://syocucffhbkfwqgrlfzo.supabase.co', 
-            'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
-        );
-    }
+    // Usamos um objeto totalmente novo para evitar conflito com o 'supabase' antigo
+    const meuBanco = supabaseJs.createClient(
+        'https://syocucffhbkfwqgrlfzo.supabase.co', 
+        'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+    );
 
-    document.getElementById('btn-entrar').addEventListener('click', async () => {
-        if (document.getElementById('pass').value === '1409') {
+    document.getElementById('btn-acesso').onclick = async () => {
+        if (document.getElementById('senha-usuario').value === '1409') {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            await carregarDados();
-        } else {
-            alert('Senha incorreta!');
-        }
-    });
+            await buscarNoBanco();
+        } else { alert('Senha incorreta!'); }
+    };
 
-    async function carregarDados() {
-        const { data } = await window.supabaseClient.from('transacoes').select('*');
-        const lista = document.getElementById('lista-transacoes');
+    async function buscarNoBanco() {
+        const { data } = await meuBanco.from('transacoes').select('*');
+        const lista = document.getElementById('lista-dados');
         lista.innerHTML = '';
         data?.forEach(t => {
             lista.innerHTML += `<li>${t.descricao} - R$ ${parseFloat(t.valor).toFixed(2)}</li>`;
         });
     }
+
+    document.getElementById('form-novo').onsubmit = async (e) => {
+        e.preventDefault();
+        await meuBanco.from('transacoes').insert([{
+            descricao: document.getElementById('desc').value,
+            valor: document.getElementById('val').value
+        }]);
+        buscarNoBanco();
+    };
 </script>
 </body>
 </html>
