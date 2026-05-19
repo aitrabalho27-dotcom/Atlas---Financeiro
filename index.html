@@ -76,17 +76,16 @@
 </div>
 
 <script>
-    // Configuração do Supabase
     const SUPABASE_URL = 'https://syocucffhbkfwqgrlfzo.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb';
     
+    // Apenas uma declaração permitida aqui:
     const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const form = document.getElementById('form-transacao');
     const lista = document.getElementById('lista-transacoes');
     const saldoElemento = document.getElementById('saldo-total');
 
-    // Função para buscar dados do banco
     async function carregarTransacoes() {
         let { data: transacoes, error } = await supabase
             .from('transacoes')
@@ -105,7 +104,6 @@
             transacoes.forEach(t => {
                 const valorFormatado = parseFloat(t.valor);
                 
-                // Ajusta o saldo baseado se é receita ou despesa
                 if (t.tipo === 'Despesa') {
                     saldo -= valorFormatado;
                 } else {
@@ -133,7 +131,6 @@
         saldoElemento.style.color = saldo >= 0 ? '#27ae60' : '#c0392b';
     }
 
-    // Função para salvar uma nova transação
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -156,7 +153,6 @@
         }
     });
 
-    // Função para deletar uma transação
     async function deletarTransacao(id) {
         if (confirm('Deseja realmente excluir esta transação?')) {
             const { error } = await supabase
@@ -172,7 +168,6 @@
         }
     }
 
-    // Carregar os dados logo que a página abrir
     carregarTransacoes();
 </script>
 </body>
