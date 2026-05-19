@@ -2,137 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhas Finanças</title>
+    <title>Atlas Financeiro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #2c3e50; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select, button { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #219653; }
-        .resumo { display: flex; justify-content: space-between; margin-bottom: 20px; background: #e0e0e0; padding: 10px; border-radius: 4px; }
-        .saldo { font-weight: bold; }
-        ul { list-style-type: none; padding: 0; }
-        li { background: #f9f9f9; padding: 10px; margin-bottom: 5px; border-left: 5px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
-        .despesa { border-left-color: #c0392b; color: #c0392b; }
-        .receita { border-left-color: #27ae60; color: #27ae60; }
-        .btn-deletar { width: auto; padding: 2px 8px; background-color: #e74c3c; font-size: 12px; }
+        .resumo { display: flex; justify-content: space-between; margin-bottom: 20px; background: #e0e0e0; padding: 10px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; }
+        li { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ccc; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>Controle Financeiro</h1>
+    <h1>Atlas Financeiro</h1>
     <div class="resumo">
         <span>Saldo Atual:</span>
-        <span id="saldo-total" class="saldo">R$ 0,00</span>
+        <span id="saldo-total">R$ 0,00</span>
     </div>
-
     <form id="form-transacao">
-        <div class="form-group">
-            <label for="descricao">Descrição</label>
-            <input type="text" id="descricao" placeholder="Ex: Supermercado, Salário" required>
-        </div>
-        <div class="form-group">
-            <label for="valor">Valor</label>
-            <input type="number" id="valor" step="0.01" placeholder="Ex: 50.00" required>
-        </div>
-        <div class="form-group">
-            <label for="tipo">Tipo</label>
-            <select id="tipo" required>
-                <option value="Despesa">Despesa</option>
-                <option value="Receita">Receita</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="categoria">Categoria</label>
-            <select id="categoria" required>
-                <option value="Alimentação">Alimentação</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Lazer">Lazer</option>
-                <option value="Moradia">Moradia</option>
-                <option value="Salário">Salário</option>
-                <option value="Outros">Outros</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="forma_pagamento">Forma de Pagamento</label>
-            <select id="forma_pagamento" required>
-                <option value="Pix">Pix</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Dinheiro">Dinheiro</option>
-            </select>
-        </div>
-        <button type="submit">Salvar Transação</button>
+        <input type="text" id="descricao" placeholder="Descrição" required>
+        <input type="number" id="valor" step="0.01" placeholder="Valor" required>
+        <select id="tipo"><option value="Despesa">Despesa</option><option value="Receita">Receita</option></select>
+        <select id="categoria"><option value="Alimentação">Alimentação</option><option value="Salário">Salário</option></select>
+        <select id="forma_pagamento"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option></select>
+        <button type="submit">Salvar</button>
     </form>
-
-    <h2>Histórico</h2>
     <ul id="lista-transacoes"></ul>
 </div>
-
 <script>
-    const SUPABASE_URL = 'https://syocucffhbkfwqgrlfzo.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb';
-    
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = Supabase.createClient(
+        'https://syocucffhbkfwqgrlfzo.supabase.co', 
+        'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+    );
 
-    const form = document.getElementById('form-transacao');
-    const lista = document.getElementById('lista-transacoes');
-    const saldoElemento = document.getElementById('saldo-total');
-
-    async function carregarTransacoes() {
-        let { data: transacoes, error } = await supabase
-            .from('transacoes')
-            .select('*')
-            .order('id', { ascending: false });
-
-        if (error) { console.error(error); return; }
-
+    async function carregar() {
+        const { data } = await supabase.from('transacoes').select('*').order('id', { ascending: false });
+        const lista = document.getElementById('lista-transacoes');
         lista.innerHTML = '';
-        let saldo = 0;
-
-        if (transacoes) {
-            transacoes.forEach(t => {
-                const valorFormatado = parseFloat(t.valor);
-                if (t.tipo === 'Despesa') { saldo -= valorFormatado; } else { saldo += valorFormatado; }
-
-                const li = document.createElement('li');
-                li.className = t.tipo === 'Despesa' ? 'despesa' : 'receita';
-                li.innerHTML = `
-                    <div><strong>${t.descricao}</strong> <small>(${t.categoria})</small><br><span style="font-size: 12px; color: #777;">${t.forma_pagamento} | ${t.tipo}</span></div>
-                    <div><span>R$ ${valorFormatado.toFixed(2)}</span><button class="btn-deletar" onclick="deletarTransacao(${t.id})">X</button></div>
-                `;
-                lista.appendChild(li);
-            });
-        }
-        saldoElemento.textContent = `R$ ${saldo.toFixed(2)}`;
-        saldoElemento.style.color = saldo >= 0 ? '#27ae60' : '#c0392b';
+        let total = 0;
+        data?.forEach(t => {
+            const v = parseFloat(t.valor);
+            total += (t.tipo === 'Receita' ? v : -v);
+            lista.innerHTML += `<li>${t.descricao} - R$ ${v.toFixed(2)} (${t.tipo})</li>`;
+        });
+        document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
     }
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('form-transacao').onsubmit = async (e) => {
         e.preventDefault();
-        const { error } = await supabase.from('transacoes').insert([{
+        await supabase.from('transacoes').insert([{
             descricao: document.getElementById('descricao').value,
-            valor: parseFloat(document.getElementById('valor').value),
+            valor: document.getElementById('valor').value,
             tipo: document.getElementById('tipo').value,
             categoria: document.getElementById('categoria').value,
             forma_pagamento: document.getElementById('forma_pagamento').value
         }]);
-        if (!error) { form.reset(); carregarTransacoes(); }
-    });
-
-    async function deletarTransacao(id) {
-        if (confirm('Excluir?')) {
-            await supabase.from('transacoes').delete().eq('id', id);
-            carregarTransacoes();
-        }
-    }
-
-    carregarTransacoes();
+        document.getElementById('form-transacao').reset();
+        carregar();
+    };
+    carregar();
 </script>
 </body>
 </html>
