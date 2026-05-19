@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Atlas Financeiro</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=2.0.0"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .resumo { display: flex; justify-content: space-between; margin-bottom: 20px; background: #e0e0e0; padding: 10px; }
         input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; }
         button { background-color: #27ae60; color: white; border: none; cursor: pointer; }
-        li { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -31,13 +30,16 @@
     <ul id="lista-transacoes"></ul>
 </div>
 <script>
-    const supabase = Supabase.createClient(
-        'https://syocucffhbkfwqgrlfzo.supabase.co', 
-        'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
-    );
+    // Verificação para garantir que o cliente só seja criado uma vez
+    if (typeof window.supabaseClient === 'undefined') {
+        window.supabaseClient = Supabase.createClient(
+            'https://syocucffhbkfwqgrlfzo.supabase.co', 
+            'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+        );
+    }
 
     async function carregar() {
-        const { data } = await supabase.from('transacoes').select('*').order('id', { ascending: false });
+        const { data } = await window.supabaseClient.from('transacoes').select('*').order('id', { ascending: false });
         const lista = document.getElementById('lista-transacoes');
         lista.innerHTML = '';
         let total = 0;
@@ -51,7 +53,7 @@
 
     document.getElementById('form-transacao').onsubmit = async (e) => {
         e.preventDefault();
-        await supabase.from('transacoes').insert([{
+        await window.supabaseClient.from('transacoes').insert([{
             descricao: document.getElementById('descricao').value,
             valor: document.getElementById('valor').value,
             tipo: document.getElementById('tipo').value,
