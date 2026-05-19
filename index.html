@@ -5,16 +5,16 @@
     <title>Atlas Financeiro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f6f9; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         h1 { text-align: center; color: #27ae60; }
         .resumo { display: flex; justify-content: space-between; margin-bottom: 20px; background: #e8f5e9; padding: 15px; border-radius: 8px; font-weight: bold; }
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #219150; }
         ul { list-style: none; padding: 0; }
-        li { background: #fff; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-excluir { background: #e74c3c; width: auto; padding: 5px 10px; margin: 0; font-size: 12px; }
+        li { background: #fff; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+        .btn-excluir { background: #e74c3c; width: auto; padding: 4px 8px; font-size: 10px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -25,12 +25,36 @@
         <span id="saldo-total">R$ 0,00</span>
     </div>
     <form id="form-transacao">
-        <input type="text" id="descricao" placeholder="Descrição" required>
+        <input type="text" id="descricao" placeholder="Descrição (ex: Aluguel, Venda A)" required>
         <input type="number" id="valor" step="0.01" placeholder="Valor" required>
-        <select id="tipo"><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
-        <select id="categoria"><option value="Alimentação">Alimentação</option><option value="Salário">Salário</option></select>
-        <select id="forma_pagamento"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option></select>
-        <button type="submit">Adicionar Transação</button>
+        
+        <select id="tipo">
+            <option value="Receita">Receita</option>
+            <option value="Despesa">Despesa</option>
+        </select>
+
+        <select id="categoria">
+            <option value="Alimentação">Alimentação</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Educação">Educação</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Salário/Renda">Salário/Renda</option>
+            <option value="Investimentos">Investimentos</option>
+            <option value="Outros">Outros</option>
+        </select>
+
+        <select id="forma_pagamento">
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Transferência">Transferência</option>
+            <option value="Boleto">Boleto</option>
+        </select>
+        
+        <button type="submit">Salvar Transação</button>
     </form>
     <ul id="lista-transacoes"></ul>
 </div>
@@ -48,17 +72,18 @@
                 const v = parseFloat(t.valor);
                 total += (t.tipo === 'Receita' ? v : -v);
                 lista.innerHTML += `<li>
-                    <span>${t.descricao} (R$ ${v.toFixed(2)})</span>
-                    <button class="btn-excluir" onclick="deletar(${t.id})">Excluir</button>
+                    <span><strong>${t.descricao}</strong><br>${t.categoria} | ${t.forma_pagamento}</span>
+                    <span>R$ ${v.toFixed(2)} <button class="btn-excluir" onclick="deletar(${t.id})">X</button></span>
                 </li>`;
             });
             document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
         }
 
-        // Função de deletar vinculada ao objeto global para o HTML achar
         window.deletar = async (id) => {
-            await window.supabaseClient.from('transacoes').delete().eq('id', id);
-            carregar();
+            if(confirm("Deseja realmente excluir este registro?")) {
+                await window.supabaseClient.from('transacoes').delete().eq('id', id);
+                carregar();
+            }
         };
 
         document.getElementById('form-transacao').onsubmit = async (e) => {
