@@ -11,7 +11,6 @@
         input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
         button { background-color: var(--accent); border: none; cursor: pointer; font-weight: bold; }
         #app-content { display: none; }
-        li { background: #2c2c2c; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -19,7 +18,7 @@
 <div id="auth-screen" class="container">
     <h2>Acesso Atlas</h2>
     <input type="password" id="pass" placeholder="Digite a senha">
-    <button onclick="checkPass()">Entrar</button>
+    <button id="btn-entrar">Entrar</button>
 </div>
 
 <div id="app-content" class="container">
@@ -31,55 +30,36 @@
     <form id="form-transacao">
         <input type="text" id="descricao" placeholder="Descrição" required>
         <input type="number" id="valor" step="0.01" placeholder="Valor" required>
-        <select id="tipo" style="width:100%; padding:12px; margin-bottom:12px; background:#2c2c2c; color:white; border-radius:6px; border:1px solid #333;">
-            <option value="Receita">Receita</option>
-            <option value="Despesa">Despesa</option>
-        </select>
         <button type="submit">Adicionar</button>
     </form>
     <ul id="lista-transacoes"></ul>
 </div>
 
 <script>
-    // Inicialização do Supabase
     const supabase = supabaseJs.createClient('https://syocucffhbkfwqgrlfzo.supabase.co', 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb');
 
-    async function checkPass() {
+    // Usamos um EventListener em vez de onclick direto para evitar o "not defined"
+    document.getElementById('btn-entrar').addEventListener('click', async () => {
         const senha = document.getElementById('pass').value;
         if (senha === '1409') {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            await carregar(); // Aguarda o carregamento dos dados
+            await carregar();
         } else {
             alert('Senha incorreta!');
         }
-    }
+    });
 
     async function carregar() {
         const { data, error } = await supabase.from('transacoes').select('*').order('id', { ascending: false });
-        if (error) { console.error("Erro ao carregar:", error); return; }
+        if (error) { console.error(error); return; }
         
         const lista = document.getElementById('lista-transacoes');
         lista.innerHTML = '';
-        let total = 0;
         data?.forEach(t => {
-            const v = parseFloat(t.valor);
-            total += (t.tipo === 'Receita' ? v : -v);
-            lista.innerHTML += `<li><span>${t.descricao}</span> <strong>R$ ${v.toFixed(2)}</strong></li>`;
+            lista.innerHTML += `<li>${t.descricao} - R$ ${parseFloat(t.valor).toFixed(2)}</li>`;
         });
-        document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
     }
-
-    document.getElementById('form-transacao').onsubmit = async (e) => {
-        e.preventDefault();
-        await supabase.from('transacoes').insert([{
-            descricao: document.getElementById('descricao').value,
-            valor: document.getElementById('valor').value,
-            tipo: document.getElementById('tipo').value
-        }]);
-        document.getElementById('form-transacao').reset();
-        carregar();
-    };
 </script>
 </body>
 </html>
