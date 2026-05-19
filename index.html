@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minhas Finanças</title>
-    <!-- Adicionando a biblioteca do Supabase via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
@@ -29,21 +28,26 @@
 <div class="container">
     <h1>Controle Financeiro</h1>
     
-    <!-- Painel de Saldo -->
     <div class="resumo">
         <span>Saldo Atual:</span>
         <span id="saldo-total" class="saldo">R$ 0,00</span>
     </div>
 
-    <!-- Formulário de Cadastro -->
     <form id="form-transacao">
         <div class="form-group">
             <label for="descricao">Descrição</label>
             <input type="text" id="descricao" placeholder="Ex: Supermercado, Salário" required>
         </div>
         <div class="form-group">
-            <label for="valor">Valor (Use negativo para despesas)</label>
-            <input type="number" id="valor" step="0.01" placeholder="Ex: -50.00 ou 2500.00" required>
+            <label for="valor">Valor</label>
+            <input type="number" id="valor" step="0.01" placeholder="Ex: 50.00" required>
+        </div>
+        <div class="form-group">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" required>
+                <option value="Despesa">Despesa</option>
+                <option value="Receita">Receita</option>
+            </select>
         </div>
         <div class="form-group">
             <label for="categoria">Categoria</label>
@@ -72,7 +76,7 @@
 </div>
 
 <script>
-  // Configuração do Supabase (Atualizado com as chaves da Carga Pesada do Atlas)
+    // Configuração do Supabase
     const SUPABASE_URL = 'https://syocucffhbkfwqgrlfzo.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb';
     
@@ -84,7 +88,6 @@
 
     // Função para buscar dados do banco
     async function carregarTransacoes() {
-        // Busca as transações ordenando pelas mais recentes
         let { data: transacoes, error } = await supabase
             .from('transacoes')
             .select('*')
@@ -100,15 +103,21 @@
 
         transacoes.forEach(t => {
             const valorFormatado = parseFloat(t.valor);
-            saldo += valorFormatado;
+            
+            // Ajusta o saldo baseado se é receita ou despesa
+            if (t.tipo === 'Despesa') {
+                saldo -= valorFormatado;
+            } else {
+                saldo += valorFormatado;
+            }
 
             const li = document.createElement('li');
-            li.className = valorFormatado < 0 ? 'despesa' : 'receita';
+            li.className = t.tipo === 'Despesa' ? 'despesa' : 'receita';
             
             li.innerHTML = `
                 <div>
                     <strong>${t.descricao}</strong> <small>(${t.categoria})</small><br>
-                    <span style="font-size: 12px; color: #777;">${t.forma_pagamento}</span>
+                    <span style="font-size: 12px; color: #777;">${t.forma_pagamento} | ${t.tipo}</span>
                 </div>
                 <div>
                     <span>R$ ${valorFormatado.toFixed(2)}</span>
@@ -128,19 +137,20 @@
 
         const descricao = document.getElementById('descricao').value;
         const valor = parseFloat(document.getElementById('valor').value);
+        const tipo = document.getElementById('tipo').value;
         const categoria = document.getElementById('categoria').value;
         const forma_pagamento = document.getElementById('forma_pagamento').value;
 
         const { error } = await supabase
             .from('transacoes')
-            .insert([{ descricao, valor, categoria, forma_pagamento }]);
+            .insert([{ descricao, valor, tipo, categoria, forma_pagamento }]);
 
         if (error) {
             alert('Erro ao salvar no Supabase!');
             console.error(error);
         } else {
             form.reset();
-            carregarTransacoes(); // Atualiza a lista na tela
+            carregarTransacoes(); 
         }
     });
 
