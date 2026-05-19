@@ -5,11 +5,16 @@
     <title>Atlas Financeiro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #bb86fc; }
+        :root { 
+            --bg: #f4f6f9; 
+            --card: #ffffff; 
+            --text: #333; 
+            --accent: #2ecc71; /* Verde Esmeralda */
+        }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
-        button { background-color: var(--accent); border: none; cursor: pointer; font-weight: bold; }
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background-color: var(--accent); color: white; border: none; cursor: pointer; font-weight: bold; }
         #app-content { display: none; }
     </style>
 </head>
@@ -23,43 +28,52 @@
 
 <div id="app-content" class="container">
     <h1>Atlas Financeiro</h1>
-    <div class="resumo">
-        <span>Saldo Total:</span>
-        <h2 id="saldo-total">R$ 0,00</h2>
-    </div>
+    <div id="saldo-box">Saldo Atual: <strong id="saldo-total">R$ 0,00</strong></div>
     <form id="form-transacao">
         <input type="text" id="descricao" placeholder="Descrição" required>
         <input type="number" id="valor" step="0.01" placeholder="Valor" required>
-        <button type="submit">Adicionar</button>
+        <button type="submit">Salvar Transação</button>
     </form>
     <ul id="lista-transacoes"></ul>
 </div>
 
 <script>
-    const supabase = supabaseJs.createClient('https://syocucffhbkfwqgrlfzo.supabase.co', 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb');
+    // Inicialização única e segura
+    const supabase = supabaseJs.createClient(
+        'https://syocucffhbkfwqgrlfzo.supabase.co', 
+        'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
+    );
 
-    // Usamos um EventListener em vez de onclick direto para evitar o "not defined"
-    document.getElementById('btn-entrar').addEventListener('click', async () => {
-        const senha = document.getElementById('pass').value;
-        if (senha === '1409') {
+    // Botão de Entrar
+    document.getElementById('btn-entrar').addEventListener('click', () => {
+        if (document.getElementById('pass').value === '1409') {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            await carregar();
+            carregarDados();
         } else {
             alert('Senha incorreta!');
         }
     });
 
-    async function carregar() {
-        const { data, error } = await supabase.from('transacoes').select('*').order('id', { ascending: false });
-        if (error) { console.error(error); return; }
-        
+    // Função de carregar dados sem declarar o supabase novamente
+    async function carregarDados() {
+        const { data } = await supabase.from('transacoes').select('*');
         const lista = document.getElementById('lista-transacoes');
         lista.innerHTML = '';
         data?.forEach(t => {
             lista.innerHTML += `<li>${t.descricao} - R$ ${parseFloat(t.valor).toFixed(2)}</li>`;
         });
     }
+
+    // Formulário
+    document.getElementById('form-transacao').onsubmit = async (e) => {
+        e.preventDefault();
+        await supabase.from('transacoes').insert([{
+            descricao: document.getElementById('descricao').value,
+            valor: document.getElementById('valor').value
+        }]);
+        carregarDados();
+    };
 </script>
 </body>
 </html>
