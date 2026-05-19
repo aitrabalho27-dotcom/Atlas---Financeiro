@@ -5,73 +5,74 @@
     <title>Atlas Financeiro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .resumo { display: flex; justify-content: space-between; margin-bottom: 20px; background: #e0e0e0; padding: 10px; }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; }
+        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #bb86fc; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; }
+        button { background-color: var(--accent); border: none; cursor: pointer; font-weight: bold; }
+        #auth-screen { display: flex; flex-direction: column; align-items: center; }
+        #app-content { display: none; }
+        .resumo { background: #333; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        li { background: #2c2c2c; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-<div class="container">
+
+<div id="auth-screen" class="container">
+    <h2>Acesso Atlas</h2>
+    <input type="password" id="pass" placeholder="Digite a senha">
+    <button onclick="checkPass()">Entrar</button>
+</div>
+
+<div id="app-content" class="container">
     <h1>Atlas Financeiro</h1>
     <div class="resumo">
-        <span>Saldo Atual:</span>
-        <span id="saldo-total">R$ 0,00</span>
+        <span>Saldo Total:</span>
+        <h2 id="saldo-total">R$ 0,00</h2>
     </div>
     <form id="form-transacao">
         <input type="text" id="descricao" placeholder="Descrição" required>
         <input type="number" id="valor" step="0.01" placeholder="Valor" required>
-        <select id="tipo"><option value="Despesa">Despesa</option><option value="Receita">Receita</option></select>
-        <select id="categoria"><option value="Alimentação">Alimentação</option><option value="Salário">Salário</option></select>
-        <select id="forma_pagamento"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option></select>
-        <button type="submit">Salvar</button>
+        <select id="tipo"><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
+        <button type="submit">Adicionar Transação</button>
     </form>
     <ul id="lista-transacoes"></ul>
 </div>
+
 <script>
-    // Aguarda o carregamento total da biblioteca
-    window.addEventListener('load', () => {
-        if (typeof supabase === 'undefined') {
-            // Se ainda não carregou, tentamos acessar pelo objeto global
-            window.supabaseClient = supabaseJs.createClient(
-                'https://syocucffhbkfwqgrlfzo.supabase.co', 
-                'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
-            );
-        } else {
-            window.supabaseClient = supabase.createClient(
-                'https://syocucffhbkfwqgrlfzo.supabase.co', 
-                'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb'
-            );
-        }
+    const supabase = supabaseJs.createClient('https://syocucffhbkfwqgrlfzo.supabase.co', 'sb_publishable_yWBL_BsIhEjg0JvTZOWong_PTgE7psb');
 
-        async function carregar() {
-            const { data } = await window.supabaseClient.from('transacoes').select('*').order('id', { ascending: false });
-            const lista = document.getElementById('lista-transacoes');
-            lista.innerHTML = '';
-            let total = 0;
-            data?.forEach(t => {
-                const v = parseFloat(t.valor);
-                total += (t.tipo === 'Receita' ? v : -v);
-                lista.innerHTML += `<li>${t.descricao} - R$ ${v.toFixed(2)} (${t.tipo})</li>`;
-            });
-            document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
-        }
-
-        document.getElementById('form-transacao').onsubmit = async (e) => {
-            e.preventDefault();
-            await window.supabaseClient.from('transacoes').insert([{
-                descricao: document.getElementById('descricao').value,
-                valor: document.getElementById('valor').value,
-                tipo: document.getElementById('tipo').value,
-                categoria: document.getElementById('categoria').value,
-                forma_pagamento: document.getElementById('forma_pagamento').value
-            }]);
-            document.getElementById('form-transacao').reset();
+    function checkPass() {
+        if (document.getElementById('pass').value === '1409') {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
             carregar();
-        };
+        } else { alert('Senha incorreta!'); }
+    }
+
+    async function carregar() {
+        const { data } = await supabase.from('transacoes').select('*').order('id', { ascending: false });
+        const lista = document.getElementById('lista-transacoes');
+        lista.innerHTML = '';
+        let total = 0;
+        data?.forEach(t => {
+            const v = parseFloat(t.valor);
+            total += (t.tipo === 'Receita' ? v : -v);
+            lista.innerHTML += `<li><span>${t.descricao}</span> <strong>R$ ${v.toFixed(2)}</strong></li>`;
+        });
+        document.getElementById('saldo-total').textContent = `R$ ${total.toFixed(2)}`;
+    }
+
+    document.getElementById('form-transacao').onsubmit = async (e) => {
+        e.preventDefault();
+        await supabase.from('transacoes').insert([{
+            descricao: document.getElementById('descricao').value,
+            valor: document.getElementById('valor').value,
+            tipo: document.getElementById('tipo').value
+        }]);
+        document.getElementById('form-transacao').reset();
         carregar();
-    });
+    };
 </script>
 </body>
 </html>
